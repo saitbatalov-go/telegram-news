@@ -19,12 +19,12 @@ type Source struct {
 }
 
 type Article struct {
-	ID          int64     `json:"id"`
-	Title       string    `json:"title"`
-	Source      Source    `json:"source"`
-	Link        string    `json:"link"`
-	Summary     string    `json:"summary"`
-	PublishedAt time.Time `json:"published_at"`
-	PostedAt    time.Time `json:"posted_at"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          int64
+	SourceID    int64
+	Title       string
+	Link        string
+	Summary     string
+	PublishedAt time.Time
+	PostedAt    time.Time
+	CreatedAt   time.Time
 }

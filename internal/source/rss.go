@@ -2,11 +2,11 @@ package source
 
 import (
 	"context"
+	"telegram-news/internal/model"
+
 	"github.com/SlyMarbo/rss"
 	"github.com/samber/lo"
 	_ "github.com/samber/lo"
-	"io"
-	"telegram-news/internal/model"
 )
 
 type RSSSource struct {
@@ -65,4 +65,11 @@ func (r RSSSource) loadSource(ctx context.Context, url string) (*rss.Feed, error
 	case feed := <-feedCh:
 		return feed, nil
 	}
+}
+
+func (r RSSSource) ID() int64 {
+	return r.SourceID
+}
+func (r RSSSource) Name() string {
+	return r.SourceName
 }
