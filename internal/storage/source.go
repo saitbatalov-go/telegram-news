@@ -2,7 +2,7 @@ package storage
 
 import (
 	"context"
-	"telegram-news/internal/model"
+	"telegram_news/internal/model"
 	"time"
 
 	"github.com/jmoiron/sqlx"

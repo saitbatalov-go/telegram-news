@@ -5,8 +5,8 @@ import (
 	"log"
 	"strings"
 	"sync"
-	"telegram-news/internal/model"
-	"telegram-news/internal/source"
+	"telegram_news/internal/model"
+	"telegram_news/internal/source"
 	"time"
 
 	"go.tomakado.io/containers/set"

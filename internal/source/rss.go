@@ -2,7 +2,7 @@ package source
 
 import (
 	"context"
-	"telegram-news/internal/model"
+	"telegram_news/internal/model"
 
 	"github.com/SlyMarbo/rss"
 	"github.com/samber/lo"
@@ -24,7 +24,7 @@ func NewRSSSourceFromModel(m model.Source) RSSSource {
 }
 
 func (s RSSSource) Fetch(ctx context.Context) ([]model.Item, error) {
-	feed, err := rss.Fetch(s.URL)
+	feed, err := s.loadFeed(ctx, s.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (s RSSSource) Fetch(ctx context.Context) ([]model.Item, error) {
 	}), nil
 }
 
-func (r RSSSource) loadSource(ctx context.Context, url string) (*rss.Feed, error) {
+func (r RSSSource) loadFeed(ctx context.Context, url string) (*rss.Feed, error) {
 	var (
 		feedCh = make(chan *rss.Feed)
 		errCh  = make(chan error)
