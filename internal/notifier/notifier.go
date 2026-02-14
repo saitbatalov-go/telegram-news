@@ -2,13 +2,17 @@ package notifier
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 
+	"telegram_news/internal/botkit/markup"
 	"telegram_news/internal/model"
 	"time"
 
+	"github.com/go-shiori/go-readability"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -81,22 +85,44 @@ func (n *Notifier) extractSummary(ctx context.Context, article model.Article) (s
 		r = resp.Body
 	}
 
-
-	doc, err: = readability.FromReader(r)
+	doc, err := readability.FromReader(r, nil)
 	if err != nil {
 		return "", err
 	}
-	
-	summary,err:=n.simmarizer.Summarize(ctx, clearText(oc.TextContent))
+
+	summary, err := n.summarizer.Summarize(ctx, cleanText(doc.TextContent))
+
 	if err != nil {
 		return "", err
 	}
-	return "\n\n"+summary, nil
 
+	return "\n\n" + summary, nil
+
+}
+
+func (n *Notifier) sendAricle(article model.Article, summary string) error {
+	const msgFormat = " *%s*%s\n\n%s"
+
+	msg := tgbotapi.NewMessage(n.channelID,
+		fmt.Sprintf(
+			msgFormat,
+			markup.EscapeForMarkdown(article.Title),
+			markup.EscapeForMarkdown(summary),
+			markup.EscapeForMarkdown(article.Link),
+		),
+	)
+	msg.ParseMode = "markdown"
+	_, err := n.bot.Send(msg)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 var redundantNewLines = regexp.MustCompile(`\n{3,}`)
 
-func clearText(text string) string {
+func cleanText(text string) string {
 	return redundantNewLines.ReplaceAllString(text, "\n")
 }
