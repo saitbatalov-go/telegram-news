@@ -2,6 +2,9 @@ package notifier
 
 import (
 	"context"
+	"io"
+	"net/http"
+	"strings"
 
 	"telegram_news/internal/model"
 	"time"
@@ -49,8 +52,51 @@ func (n *Notifier) SelectAndSendArticle(ctx context.Context) error {
 
 	article := topOneAcrtiles[0]
 
-	summary, err := n.summarizer.Summarize(ctx, article)
+	summary, err := n.extractSummary(ctx, article)
 	if err != nil {
 		return err
 	}
+	if err := n.sendAricle(article, summary); err != nil {
+		return err
+	}
+	if err := n.articles.MarkPosted(ctx, article.ID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (n *Notifier) extractSummary(ctx context.Context, article model.Article) (string, error) {
+	var r io.Reader
+
+	if article.Summary != "" {
+		r = strings.NewReader(article.Summary)
+	} else {
+		resp, err := http.Get(article.Link)
+		if err != nil {
+			return "", err
+		}
+
+		defer resp.Body.Close()
+
+		r = resp.Body
+	}
+
+
+	doc, err: = readability.FromReader(r)
+	if err != nil {
+		return "", err
+	}
+	
+	summary,err:=n.simmarizer.Summarize(ctx, clearText(oc.TextContent))
+	if err != nil {
+		return "", err
+	}
+	return "\n\n"+summary, nil
+
+}
+
+var redundantNewLines = regexp.MustCompile(`\n{3,}`)
+
+func clearText(text string) string {
+	return redundantNewLines.ReplaceAllString(text, "\n")
 }
