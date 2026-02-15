@@ -12,7 +12,7 @@ import (
 type Config struct {
 	TelegramBotToken     string        `hcl:"telegram_bot_token" env:"TELEGRAM_BOT_TOKEN" required:"true"`
 	TelegramChannelID    int64         `hcl:"telegram_channel_id" env:"TELEGRAM_CHANNEL_ID" required:"true"`
-	databaseDSN          string        `hcl:"database_dsn" env:"DATABASE_DSN" default:"postgres://postgres:root@localhost:5432/telegram_news?sslmode=disable"`
+	DatabaseDSN          string        `hcl:"database_dsn" env:"DATABASE_DSN" default:"postgres://postgres:root@localhost:5432/telegram_news?sslmode=disable"`
 	FetchInterval        time.Duration `hcl:"fetch_interval" env:"FETCH_INTERVAL" default:"10m"`
 	NotificationInterval time.Duration `hcl:"notification_interval" env:"NOTIFICATION_INTERVAL" default:"1m"`
 	FilterKeywords       []string      `hcl:"filter_keywords" env:"FILTER_KEYWORDS"`
