@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"telegram_news/internal/bot"
+	"telegram_news/internal/botkit"
 	"telegram_news/internal/config"
 	"telegram_news/internal/fetcher"
 	"telegram_news/internal/notifier"
@@ -17,24 +19,23 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-
 func main() {
 
-	BotAPI,err:= tgbotapi.NewBotAPI(config.Get().TelegramBotToken)
+	BotAPI, err := tgbotapi.NewBotAPI(config.Get().TelegramBotToken)
 	if err != nil {
-		log.Printf("failed to create bot %v",err)
+		log.Printf("failed to create bot %v", err)
 	}
 
-	db,err:= sqlx.Connect("postgres",config.Get().DatabaseDSN)
+	db, err := sqlx.Connect("postgres", config.Get().DatabaseDSN)
 	if err != nil {
-		log.Printf("failed to connect to database %v",err)
+		log.Printf("failed to connect to database %v", err)
 	}
 	defer db.Close()
 
 	var (
-		sourcesStorage = storage.NewSourceStorage(db)
+		sourcesStorage  = storage.NewSourceStorage(db)
 		articlesStorage = storage.NewArticleStorage(db)
-		fetcher = fetcher.New(
+		fetcher         = fetcher.New(
 			articlesStorage,
 			sourcesStorage,
 			config.Get().FetchInterval,
@@ -42,7 +43,7 @@ func main() {
 		)
 		notifier = notifier.New(
 			articlesStorage,
-			summary.NewOpenAISummarizer(config.Get().OpenAIKey,config.Get().OpenAIPrompt),
+			summary.NewOpenAISummarizer(config.Get().OpenAIKey, config.Get().OpenAIPrompt),
 			BotAPI,
 			config.Get().NotificationInterval,
 			2*config.Get().FetchInterval,
@@ -50,34 +51,39 @@ func main() {
 		)
 	)
 
-	ctx, cancel:=signal.NotifyContext(context.Background(), os.Interrupt,syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	go func (ctx context.Context)  {
-		if err:=fetcher.Start(ctx); err!=nil {
+	newsBot := botkit.New(BotAPI)
+	newsBot.RegisterCmdView("start", bot.ViewCmdStart())
 
-if !errors.Is(err,context.Canceled) {
-	log.Printf("failed to start fetcher %v",err)
-			return
-}
-log.Printf("fetcher stopperd")
+	go func(ctx context.Context) {
+		if err := fetcher.Start(ctx); err != nil {
+
+			if !errors.Is(err, context.Canceled) {
+				log.Printf("failed to start fetcher %v", err)
+				return
+			}
+			log.Printf("fetcher stopperd")
 		}
-
 
 	}(ctx)
-	}
 
-
-	// go func (ctx context.Context)  {
-		if err:=notifier.Start(ctx); err!=nil {
-
-if !errors.Is(err,context.Canceled) {
-	log.Printf("failed to start notifier %v",err)
-			return
-}
-log.Printf("notifier stopperd")
+	go func(ctx context.Context) {
+		if err := notifier.Start(ctx); err != nil {
+			if !errors.Is(err, context.Canceled) {
+				log.Printf("failed to start notifier %v", err)
+				return
+			}
+			log.Printf("notifier stopperd")
 		}
+	}(ctx)
 
-
-	// }(ctx)
+	if err := newsBot.Run(ctx); err != nil {
+		if !errors.Is(err, context.Canceled) {
+			log.Printf("failed to start bot %v", err)
+			return
+		}
+		log.Printf("bot stoppe2772rd")
+	}
 }
